@@ -1,0 +1,14 @@
+树莓派
+传感器地址 0x33
+
+//登录
+pi
+raspberry
+
+//设置I2C开关 速度
+编辑/boot/config.txt
+将dtparam=i2c_arm=on 替代为 dtparam=i2c_arm=on,i2c_arm_baudrate=400000
+
+
+若想这个模块自动装载，请把它写到   /etc/modules-load.d/raspberrypi.conf 
+

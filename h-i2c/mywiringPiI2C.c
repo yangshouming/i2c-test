@@ -100,6 +100,9 @@ struct i2c_smbus_ioctl_data
   union i2c_smbus_data *data ;
 } ;
 
+
+    
+
 static inline int i2c_smbus_access (int fd, char rw, uint8_t command, int size, union i2c_smbus_data *data)
 {
   struct i2c_smbus_ioctl_data args ;
@@ -223,9 +226,10 @@ int mywiringPiI2CReadReg16_mlx (int fd, uint16_t reg, uint16_t *value,uint16_t l
 
     */
 
+    data.block[0]=6;
 
 
-    if (i2c_smbus_access (fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
+    if (i2c_smbus_access (fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BLOCK_PROC_CALL, &data))
       return -1 ;
     else
       return data.word & 0xFFFF ;

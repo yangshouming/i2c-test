@@ -30,8 +30,8 @@
 
 
 //GPIO 配置
-#define SCL_PIN 	2	
-#define SDA_PIN  	3	
+#define SCL_PIN 	9	
+#define SDA_PIN  	8	
 
 //电平定义
 #define LOW 		0
@@ -61,9 +61,10 @@ void Wait(int);
 
 static int freqCnt;
 
-void MLX90640_I2CInit()
+int MLX90640_I2CInit()
 {   
-	wiringPiSetup (); // 初始化 这个必须写在最前面
+	int ret;
+	ret=wiringPiSetup(); // 初始化 这个必须写在最前面
 	
 	pinMode (SDA_PIN, OUTPUT);
 	pinMode (SCL_PIN, OUTPUT);
@@ -72,8 +73,16 @@ void MLX90640_I2CInit()
 	SDA_HIGH
 	
     I2CStop();
+	
+	return ret;
+
 }
-    
+ 
+/*
+返回
+	-1  错误
+	0   正常
+*/
 int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress,uint16_t nMemAddressRead, uint16_t *data)
 {
     uint8_t sa;
@@ -123,7 +132,7 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress,uint16_t nMemAddre
     } 
         
     I2CReadBytes((nMemAddressRead << 1), i2cData);
-              
+
     I2CStop();   
 
     for(cnt=0; cnt < nMemAddressRead; cnt++)

@@ -19,6 +19,7 @@
 #include "MLX90640_I2C_Driver.h"
 #include "MLX90640_API.h"
 #include <math.h>
+#include <stdlib.h>
 
 #include "i2c.h"
 
@@ -53,22 +54,36 @@ static float mlx90640To_app[768];		//计算后的图像数据		APP测试数据
 
 static void printf_dump_uint8_t(uint8_t *pdata, int length);
 static void printf_dump_uint16_t(uint16_t *pdata, int length);
+//计算百分比
+float get_data_correct_percent(int data_target, int data_source);
 
-int main(int argv)
+int main(int argc, char **argv)
 {
 	int i;
 
-	//mlx_init();
+	mlx_init();
+
+#if 0
+	if (argv[1] == NULL)
+	{
+		printf("enter number\n");
+		return -1;
+	}
+	i = atoi(argv[1]);
+	printf("i %d\n", i);
 
 	MLX90640_I2CInit();
-	MLX90640_I2CRead(SLAVEADDRESS, 0x2400, 8, mlx90640Frame_app);
-	MLX90640_I2CWrite(SLAVEADDRESS, 0x8000, 0x1234);
+	MLX90640_I2CRead(SLAVEADDRESS, 0x2400, i, eeMLX90640);
+	printf_dump_uint16_t(eeMLX90640, i);
+	// MLX90640_I2CWrite(SLAVEADDRESS, 0x8000, 0x1234);
+#endif
 
 	printf("MLX90640_SetRefreshRate 0x%x\n", MLX90640_GetRefreshRate(SLAVEADDRESS));
 
 	for (;;)
 	{
-		/*
+
+#if 1
 		if (mlx_get_source_data(mlx90640Frame_app) == 0)
 		{
 			get_source_data_cnt++;
@@ -79,26 +94,31 @@ int main(int argv)
 			get_calc_data_cnt++;
 		}
 
-		printf("mlx_get_calculate_data\n");
-		for (i = 0; i < 768;)
-		{
-			printf("%04.1f ", mlx90640To_app[i]);
-			i++;
-			if ((i % 32) == 0)
-			{
-				printf("\n");
-			}
-		}
+		// printf("mlx_get_calculate_data\n");
+		// for (i = 0; i < 768;)
+		// {
+		// 	printf("%04.1f ", mlx90640To_app[i]);
+		// 	i++;
+		// 	if ((i % 32) == 0)
+		// 	{
+		// 		printf("\n");
+		// 	}
+		// }
 
 		//成功率数据统计
 		run_cnt++;
-		get_source_data_percent = (float)((get_source_data_cnt * 100) / run_cnt);
-		get_calc_data_percent = (float)((get_calc_data_cnt * 100) / run_cnt);
-		printf("get_source %d %f;get_calc_data %d %f;run_cnt %d;      \n", get_source_data_cnt, get_source_data_percent, get_calc_data_cnt, get_calc_data_percent, run_cnt);
-		*/
 
-		break;
-		delay(500);
+#endif
+		if (run_cnt >= 1000)
+		{
+
+			get_source_data_percent = get_data_correct_percent(get_source_data_cnt, run_cnt);
+			get_calc_data_percent = get_data_correct_percent(get_calc_data_cnt, run_cnt);
+			printf("get_source %d %f;get_calc_data %d %f;run_cnt %d;      \n", get_source_data_cnt, get_source_data_percent, get_calc_data_cnt, get_calc_data_percent, run_cnt);
+			break;
+		}
+
+		delay(8);
 	}
 	printf("break exit\n");
 	return 0;
@@ -138,6 +158,13 @@ static void printf_dump_uint8_t(uint8_t *pdata, int length)
 	printf("\n");
 }
 
+//计算百分比
+float get_data_correct_percent(int data_target, int data_source)
+{
+	float sdata_target = data_target;
+	float sdata_source = data_source;
+	return (sdata_target / sdata_source) * 100;
+}
 /******************************************************************************/
 /*
 * 函数名称 : mlx_init

@@ -54,17 +54,19 @@ int hal_i2c_init(void)
     if (fd < 0)
     {
         printf("%s:fd %d error\n", DEVICE_NODE, fd);
-        return fd;
+        return -1;
     }
     else
     {
         printf("%s:fd %d ok\n", DEVICE_NODE, fd);
     }
 
-    ioctl(fd, I2C_TIMEOUT, 1); //设置超时时间
+    ioctl(fd, I2C_TIMEOUT, 5); //设置超时时间
     ioctl(fd, I2C_RETRIES, 2); //设置重试次数
 
-    return fd;
+    close(fd);
+
+    return 0;
 }
 
 /*****************************************************************************
@@ -76,12 +78,20 @@ int hal_i2c_read(uint8_t device_addr, uint16_t reg_addr, uint8_t *buff, int Byte
     uint8_t buftmp[32];
     struct i2c_rdwr_ioctl_data i2c_data;
 
+    fd = open(DEVICE_NODE, O_RDWR); //打开设备节点
+    if (fd < 0)
+    {
+        printf("%s:fd %d error\n", DEVICE_NODE, fd);
+        return -1;
+    }
+
     //init
     i2c_data.nmsgs = 2; //命令的条数（组数）
     i2c_data.msgs = (struct i2c_msg *)malloc(i2c_data.nmsgs * sizeof(struct i2c_msg));
     if (i2c_data.msgs == NULL)
     {
         printf("malloc error");
+        close(fd);
         return -1;
     }
 
@@ -108,15 +118,15 @@ int hal_i2c_read(uint8_t device_addr, uint16_t reg_addr, uint8_t *buff, int Byte
     //     free(i2c_data.msgs);
     //     return ret;
     // }
-
+    close(fd);
     free(i2c_data.msgs);
 
 #if 0
     int i;
-    printf("hal_i2c_read 0x%02x:", buftmp[0]);
+    printf("hal_i2c_read 0x%02x:\n", buftmp[0]);
     for (i = 0; i < ByteNo; i++)
     {
-        printf(" 0x%02x", buff[i]);
+        printf("%02x ", buff[i]);
     }
     printf("\n");
 #endif
@@ -133,6 +143,13 @@ int hal_i2c_write(uint8_t device_addr, uint16_t reg_addr, uint8_t *buff, int Byt
     int ret;
     uint8_t buftmp[32];
     struct i2c_rdwr_ioctl_data i2c_data;
+
+    fd = open(DEVICE_NODE, O_RDWR); //打开设备节点
+    if (fd < 0)
+    {
+        printf("%s:fd %d error\n", DEVICE_NODE, fd);
+        return -1;
+    }
 
     //init
     i2c_data.nmsgs = 1;
@@ -157,17 +174,19 @@ int hal_i2c_write(uint8_t device_addr, uint16_t reg_addr, uint8_t *buff, int Byt
     if (ret < 0)
     {
         printf("write reg %x %x error\r\n", device_addr, reg_addr);
+        close(fd);
         free(i2c_data.msgs);
         return 1;
     }
+    close(fd);
     free(i2c_data.msgs);
 
-#if 1
+#if 0
     int i;
     printf("hal_i2c_write 0x%02x:", buftmp[0]);
     for (i = 0; i < ByteNo; i++)
     {
-        printf(" 0x%02x", buftmp[1 + i]);
+        printf("%02x ", buftmp[1 + i]);
     }
     printf("\n");
 #endif
@@ -186,6 +205,7 @@ int MLX90640_I2CInit()
     return ret;
 }
 
+uint8_t iic_read_buff[1664] = {0x00};
 /*
 * 函数名称 : MLX90640_I2CRead
 * 功能描述 : This function reads a desired number of words from a selected MLX90640 device memory starting from a
@@ -202,7 +222,6 @@ given address and stores the data in the MCU memory location defined by the user
 int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data)
 {
 
-    uint8_t iic_read_buff[1664] = {0x00};
     uint32_t err_code = 0;
 
     uint16_t cnt = 0;
@@ -212,6 +231,12 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
     //读出数据
     err_code = hal_i2c_read(slaveAddr, startAddress, iic_read_buff, nMemAddressRead * 2);
     //err_code = HAL_I2C_Mem_Read(&hi2c1, slaveAddr << 1, startAddress, I2C_MEMADD_SIZE_16BIT, iic_read_buff, nMemAddressRead * 2, 1000);
+
+    // for (i = 0; i < nMemAddressRead * 2; i++)
+    // {
+    //     printf("%02x ", iic_read_buff[i]);
+    // }
+    // printf("\n");
 
     if (err_code)
     {
